@@ -126,75 +126,75 @@ def inserirDataBaseRestaurantesETabelas(conexaoDB, dicionarioErp):
     try:
         cursor = conexaoDB.cursor()
 
-        guest_check = dicionarioErp['guestChecks'][0]
-        cursor.execute("""
-        INSERT INTO guest_checks (
-            guest_check_id, chk_num, opn_bus_dt, opn_utc, clsd_bus_dt, clsd_utc,
-            last_trans_utc, last_updated_utc, clsd_flag, gst_cnt, sub_ttl, chk_ttl,
-            dsc_ttl, pay_ttl, rvc_num, ot_num, tbl_num, tbl_name, emp_num, num_srvc_rd,
-            num_chk_prntd
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            guest_check['guestCheckId'], guest_check['chkNum'], guest_check['opnBusDt'],
-            guest_check['opnUTC'], guest_check['clsdBusDt'], guest_check['clsdUTC'],
-            guest_check['lastTransUTC'], guest_check['lastUpdatedUTC'], guest_check['clsdFlag'],
-            guest_check['gstCnt'], guest_check['subTtl'], guest_check['chkTtl'],
-            guest_check['dscTtl'], guest_check['payTtl'], guest_check['rvcNum'],
-            guest_check['otNum'], guest_check['tblNum'], guest_check['tblName'],
-            guest_check['empNum'], guest_check['numSrvcRd'], guest_check['numChkPrntd']
-        ))
-        conexaoDB.commit()
+        for guest_check in dicionarioErp['guestChecks']:
+            cursor.execute("""
+            INSERT INTO guest_checks (
+                guest_check_id, chk_num, opn_bus_dt, opn_utc, clsd_bus_dt, clsd_utc,
+                last_trans_utc, last_updated_utc, clsd_flag, gst_cnt, sub_ttl, chk_ttl,
+                dsc_ttl, pay_ttl, rvc_num, ot_num, tbl_num, tbl_name, emp_num, num_srvc_rd,
+                num_chk_prntd
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                guest_check['guestCheckId'], guest_check['chkNum'], guest_check['opnBusDt'],
+                guest_check['opnUTC'], guest_check['clsdBusDt'], guest_check['clsdUTC'],
+                guest_check['lastTransUTC'], guest_check['lastUpdatedUTC'], guest_check['clsdFlag'],
+                guest_check['gstCnt'], guest_check['subTtl'], guest_check['chkTtl'],
+                guest_check['dscTtl'], guest_check['payTtl'], guest_check['rvcNum'],
+                guest_check['otNum'], guest_check['tblNum'], guest_check['tblName'],
+                guest_check['empNum'], guest_check['numSrvcRd'], guest_check['numChkPrntd']
+            ))
+            conexaoDB.commit()
 
-        if guest_check['taxes']:
-            for tax in guest_check['taxes']:
+            if guest_check['taxes']:
+                for tax in guest_check['taxes']:
+                    cursor.execute("""
+                    INSERT INTO taxes (
+                        tax_num, guest_check_id, txbl_sls_ttl, tax_coll_ttl, tax_rate, type
+                    ) VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (
+                        tax['taxNum'], guest_check['guestCheckId'], tax['txblSlsTtl'],
+                        tax['taxCollTtl'], tax['taxRate'], tax['type']
+                    ))
+                conexaoDB.commit()
+
+
+            for detail in guest_check['detailLines']:
+                menu_item = detail['menuItem']
+
                 cursor.execute("""
-                INSERT INTO taxes (
-                    tax_num, guest_check_id, txbl_sls_ttl, tax_coll_ttl, tax_rate, type
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO menu_item (
+                    menu_item_id, guest_check_id, line_id, mi_num, incl_tax, prc_lvl, discount,
+                    service_charge, tender_media, error_code
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
-                    tax['taxNum'], guest_check['guestCheckId'], tax['txblSlsTtl'],
-                    tax['taxCollTtl'], tax['taxRate'], tax['type']
+                    menu_item['miNum'], guest_check['guestCheckId'], detail['lineNum'],
+                    menu_item['miNum'], menu_item['inclTax'], menu_item['prcLvl'],
+                    menu_item.get('discount', None), menu_item.get('serviceCharge', None),
+                    menu_item.get('tenderMedia', None), menu_item.get('errorCode', None)
                 ))
-            conexaoDB.commit()
+                conexaoDB.commit()
 
 
-        for detail in guest_check['detailLines']:
-            menu_item = detail['menuItem']
+            for detail in guest_check['detailLines']:
+                menu_item = detail['menuItem']
 
-            cursor.execute("""
-            INSERT INTO menu_item (
-                menu_item_id, guest_check_id, line_id, mi_num, incl_tax, prc_lvl, discount,
-                service_charge, tender_media, error_code
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                menu_item['miNum'], guest_check['guestCheckId'], detail['lineNum'],
-                menu_item['miNum'], menu_item['inclTax'], menu_item['prcLvl'],
-                menu_item.get('discount', None), menu_item.get('serviceCharge', None),
-                menu_item.get('tenderMedia', None), menu_item.get('errorCode', None)
-            ))
-            conexaoDB.commit()
+                cursor.execute("""
+                INSERT INTO detail_lines (
+                    detail_line_id, guest_check_id, guest_check_line_item_id, detail_utc, detail_lcl, last_update_utc,
+                    bus_dt, ws_num, dsp_ttl, dsp_qty, agg_ttl, agg_qty, chk_emp_id, chk_emp_num,
+                    svc_rnd_num, seat_num, menu_item_id
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    detail['guestCheckLineItemId'], guest_check['guestCheckId'], detail['guestCheckLineItemId'], detail['detailUTC'],
+                    detail['detailLcl'], detail['lastUpdateUTC'], detail['busDt'], detail['wsNum'],
+                    detail['dspTtl'], detail['dspQty'], detail['aggTtl'], detail['aggQty'],
+                    detail['chkEmpId'], detail['chkEmpNum'], detail['svcRndNum'],
+                    detail['seatNum'], menu_item['miNum']
+                ))
 
+                conexaoDB.commit()
 
-        for detail in guest_check['detailLines']:
-            menu_item = detail['menuItem']
-
-            cursor.execute("""
-            INSERT INTO detail_lines (
-                detail_line_id, guest_check_id, guest_check_line_item_id, detail_utc, detail_lcl, last_update_utc,
-                bus_dt, ws_num, dsp_ttl, dsp_qty, agg_ttl, agg_qty, chk_emp_id, chk_emp_num,
-                svc_rnd_num, seat_num, menu_item_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                detail['guestCheckLineItemId'], guest_check['guestCheckId'], detail['guestCheckLineItemId'], detail['detailUTC'],
-                detail['detailLcl'], detail['lastUpdateUTC'], detail['busDt'], detail['wsNum'],
-                detail['dspTtl'], detail['dspQty'], detail['aggTtl'], detail['aggQty'],
-                detail['chkEmpId'], detail['chkEmpNum'], detail['svcRndNum'],
-                detail['seatNum'], menu_item['miNum']
-            ))
-
-            conexaoDB.commit()
-
-        print("Dados inseridos com sucesso")
+            print("Dados inseridos com sucesso")
 
     except mysql.connector.Error as e:
         print(f"Erro ao inserir dados: {e}")
