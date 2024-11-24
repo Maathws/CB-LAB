@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 import mysql.connector
-import retornaDicionarioErp as dicerp
 
 load_dotenv()
 
@@ -205,9 +204,3 @@ def inserirDataBaseRestaurantesETabelas(conexaoDB, dicionarioErp):
 
 
 
-conexaoDB = conectarDataBaseGeral()
-criarDataBaseRestaurantesETabelas(conexaoDB)
-
-dicionarioErp = dicerp.retornaDicionarioErp()
-
-inserirDataBaseRestaurantesETabelas(conexaoDB, dicionarioErp)
